@@ -34,9 +34,9 @@ def get_completion_from_messages(messages, model="gpt-3.5-turbo", temperature=0)
 # Función para saludar 
 @app.post("/bienvenido")
 def welcome_movistar(user: User):
+    res = []
     def saludar(saludo="¡Hola! Bienvenid@ al chat de movistar!"):
         print(saludar)  # O realiza cualquier otra acción con el mensaje de saludo
-    res = []
     messages = [
         {
             'role': 'system',
