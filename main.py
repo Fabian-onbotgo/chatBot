@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from typing import Optional
 from dotenv import load_dotenv
 
+load_dotenv()
+
 app = FastAPI()
 openai.api_key=os.getenv('API_KEY')
 
@@ -31,12 +33,12 @@ def get_completion_from_messages(messages, model="gpt-3.5-turbo", temperature=0)
     
     return response.choices[0].message.content
 
-# Función para saludar 
+def saludar(saludo="¡Hola! Bienvenid@ al chat de movistar!"):
+    return saludo  # Devuelve el saludo en lugar de imprimirlo
+
 @app.post("/bienvenido")
 def welcome_movistar(user: User):
     res = []
-    def saludar(saludo="¡Hola! Bienvenid@ al chat de movistar!"):
-        print(saludar)  # O realiza cualquier otra acción con el mensaje de saludo
     messages = [
         {
             'role': 'system',
@@ -54,7 +56,7 @@ def welcome_movistar(user: User):
             "type": "function",
             "function": {
                 "name": "saludar",
-                "description": "Obtienes la funcion saludar y la ejecutas",
+                "description": "Tienes que imprimir el mensaje designado",
                 "parameters": {
                     "type": "object",
                     "properties": {}
@@ -91,27 +93,34 @@ def welcome_movistar(user: User):
     
     if tools_calls:
         ##### LAS FUNCIONES DISPONIBLES, SON LAS FUNCIONES A LLAMAR DENTRO DEL TOOLS
-        available_functions = {"welcome_movistar": welcome_movistar} 
+        available_functions = {"saludar": saludar} 
         messages.append(response_message)
         
         for tool_call in tools_calls:  # Corregir el nombre de la variable (tools_calls en lugar de tool_call)
             function_name = tool_call.function.name
-            function_to_call = available_functions[function_name]
-            #### SI TIENES FUNCIONES CON PARAMETROS DE ENTRADA, NECESITAS AGREGAR UN FUNCTION_ARGS, LO ENCUENTRAS EN EL EJEMPLO DEL FUNCTION CALLING DE OPENAI
-            function_response = function_to_call()
-            messages.append(
-                {
-                    "tool_call_id": tool_call.id,
-                    "role": "tool",
-                    "name": function_name,
-                    "content": function_response,
-                }
-            )
+            function_to_call = available_functions.get(function_name)
+            if function_to_call is not None:
+                #### SI TIENES FUNCIONES CON PARAMETROS DE ENTRADA, NECESITAS AGREGAR UN FUNCTION_ARGS, LO ENCUENTRAS EN EL EJEMPLO DEL FUNCTION CALLING DE OPENAI
+                function_response = function_to_call()
+                messages.append(
+                    {
+                        "tool_call_id": tool_call.id,
+                        "role": "tool",
+                        "name": function_name,
+                        "content": function_response,
+                    }
+                )
             
         second_response = openai.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             messages=messages,
         )
+        
+        return second_response.choices[0].message.content  # Return para el second_response
+        
+    else:
+        return response_content  # Return si no hay function calls
+
         
         ##### TE FALTA EL RETURN DEL IF PARA EL SECOND RESPONSE
         ##### EL SECOND RESPONSE ES LA RESPUESTA DE LOS TOOLS O FUNCTION CALLING
