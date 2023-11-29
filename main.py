@@ -49,6 +49,7 @@ def welcome_movistar(user: User):
     ]
     # Agregar elementos impares como objetos individuales a la lista messages
     tools = [
+        ###### LAS FUNCIONES DENTRO DEL TOOLS DEBEN SER FUNCIONES EXTERNAS, NO DENTRO DE LA MISMA FUNCION DE OPENAI
         {
             "type": "function",
             "function": {
@@ -89,12 +90,14 @@ def welcome_movistar(user: User):
     tools_calls = response_message.tool_calls
     
     if tools_calls:
-        available_functions = {"welcome_movistar": welcome_movistar}
+        ##### LAS FUNCIONES DISPONIBLES, SON LAS FUNCIONES A LLAMAR DENTRO DEL TOOLS
+        available_functions = {"welcome_movistar": welcome_movistar} 
         messages.append(response_message)
         
         for tool_call in tools_calls:  # Corregir el nombre de la variable (tools_calls en lugar de tool_call)
             function_name = tool_call.function.name
             function_to_call = available_functions[function_name]
+            #### SI TIENES FUNCIONES CON PARAMETROS DE ENTRADA, NECESITAS AGREGAR UN FUNCTION_ARGS, LO ENCUENTRAS EN EL EJEMPLO DEL FUNCTION CALLING DE OPENAI
             function_response = function_to_call()
             messages.append(
                 {
@@ -109,6 +112,11 @@ def welcome_movistar(user: User):
             model="gpt-3.5-turbo-1106",
             messages=messages,
         )
+        
+        ##### TE FALTA EL RETURN DEL IF PARA EL SECOND RESPONSE
+        ##### EL SECOND RESPONSE ES LA RESPUESTA DE LOS TOOLS O FUNCTION CALLING
+        
+    #### TE FALTA EL ELSE QUE PERMITE RETORNAR LA RESPUESTA EN CASO DE NO ENTRAR A LOS FUNCTION CALLING
 
 
 # Función para verificar el saldo del usuario
