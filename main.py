@@ -1,5 +1,5 @@
 import openai
-from fastapi import FastAPI
+import json
 import os
 from pydantic import BaseModel
 from typing import Optional
@@ -7,28 +7,86 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI()
+# Se carga la variable dentro del .env que contiene el token
 openai.api_key=os.getenv('API_KEY')
 
-class User(BaseModel):
-    id: Optional[str] = ''
-    message: str
-
-# Función para enviar mensajes al modelo y obtener la respuesta
-def get_completion(prompt, model ="gpt-3.5-turbo"):
-    messages = [{"role": "user", "content": prompt}]
+def get_completion_from_messages(messages):
+    tools = [
+        {
+            "type": "function",
+                    "function": {
+                        "name": "detalle_deuda",
+                        "description": "",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "",
+                                },
+                            },
+                            "required": ["message"],
+                        }
+                    },      
+        },
+        {
+            "type": "function",
+                    "function": {
+                        "name": "solicitar_recibo",
+                        "description": "",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "",
+                                },
+                            },
+                            "required": ["message"],
+                        }
+                    },
+        },
+        {
+            "type": "function",
+                    "function": {
+                        "name": "formas_lugares_pago",
+                        "description": "",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "",
+                                },
+                            },
+                            "required": ["message"],
+                        }
+                    },
+        },
+        {
+                    "type": "function",
+                    "function": {
+                        "name": "despedida",
+                        "description": "genera una respuesta fija como despedida la cual incluye el resumen de lo conversado",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "se entregará una despedida bajo un contexto de resumen",
+                                },
+                            },
+                            "required": ["message"],
+                        }
+                    },
+        }
+    ]
     response = openai.chat.completions.create(
-      model=model,
-      messages=messages,
-      temperature=0,
-    )
-    return response.choices[0].messages.content
-
-def get_completion_from_messages(messages, model="gpt-3.5-turbo", temperature=0):
-    response = openai.chat.completions.create(
-        model=model,
+        model='gpt-3.5-turbo-1106',
         messages=messages,
-        temperature=temperature,
+        tools=tools,
+        tool_choice="auto",
+        temperature=0,
     )
     
     return response.choices[0].message.content
