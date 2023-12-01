@@ -9,89 +9,80 @@ load_dotenv()
 openai.api_key=os.getenv('API_KEY')
 
 # Funcion a ejecutar si el input esta relacionado a detalles de la deuda
-def detalle_deuda(message):
-    prompt = f"""
-    ¡Tienes una tarea! Proporcionar detalles sobre la deuda de un usuario.
+def detalle_deuda():
+    """
+    proporciona el detalle de la deuda de un usuario mediante un formato predefinido entre triple comillas dobles
+    
+    """
+    prompt = f"""DETALLE DE LA DEUDA VENCIDA
+    Querido/a cliente/a con el siguiente: {input_user} 
+    Tiene una deuda por pagar del siguiente monto $10.000. 
+    Vencida el 30/11 
+    Servicio contratado en AV. Huerfanos 1111. 
+    """
 
-    Comienza pidiendo al cliente que ingrese el DNI \
-    con un formato de entre 9 y 10 caracteres, que el guión del DNI sea obligatorio.
-
-    si la persona ingresa un mensaje diferente, vuelve a pedir el DNI de manera amable.
-
-    A continuación, regresa la siguiente información entre comillas triples simples:
-
-    '''DETALLE DE LA DEUDA VENCIDA
-    Querido/a cliente/a con el siguiente <DNI>
-    Tiene una deuda por pagar del siguiente monto $10.000. \
-    Vencida el 30/11
-    Servicio contratado en AV. Huerfanos 1111. \
-    '''
-
-    Luego, pregunta si el usuario necesita ayuda adicional.
-
+    """
     Los datos recolectados se delimitarán por comillas triples invertidas.
 
-    Mensaje del usuario: ```{message}```
     """
     return prompt
 
-def solicitar_recibo(message):
-    prompt = f"""
-    ¡Tienes una tarea! Obtener recibo.
+def solicitar_recibo():
+    """
+    Obtener el recibo.
 
-    A continuación, regresa la siguiente información entre comillas triples simples:
-
-    '''SOLICITAR RECIBO
-    {B2C} \
-     \
-    '''
-    Luego, pregunta si el usuario necesita ayuda adicional.
+    A continuación, regresa la siguiente información entre comillas triples dobles:
+    
+    """
+    
+    prompt = f"""SOLICITAR RECIBO
+    Obten tu recibo con solo unos clics https://mirecibo.mosvistar.com.pe/
+    """
+    
+    """
 
     Los datos recolectados se delimitarán por comillas triples invertidas.
 
-    Mensaje del usuario: ```{message}```
     """
-    
-    B2C = "Obten tu recibo con solo unos clics https://mirecibo.mosvistar.com.pe/"
     return prompt
 
-def formas_lugar_pago(message):
-    prompt = f"""
-    ¡Tienes una tarea! Proporcionar formas y lugares de pago de un usuario.
+def formas_lugar_pago():
+    """
+    Proporcionar formas y lugares de pago para el usuario.
 
-    A continuación, regresa la siguiente información entre comillas triples simples:
+    A continuación, regresa la siguiente información entre comillas triples dobles:
+    
+    """
 
-    '''FORMAS Y LUGARES DE PAGO \
-    En Movistar te brindamos diversas formas de pago SIN COMISION. Puedes pagar por yape: {yape}  \ 
-    Desde la web o app de tu banco. \
-    Conoce todos los canales de pago en el siguiente link {link} \
-    '''
+    prompt = f"""FORMAS Y LUGARES DE PAGO 
+    En Movistar te brindamos diversas formas de pago SIN COMISION. Puedes pagar por yape: https://innovacxion.page.link/mVFa
+    Desde la web o app de tu banco. 
+    Conoce todos los canales de pago en el siguiente link: https://www.movistar.com.pe/atencion-al-cliente/lugares-y-medios-de-pago 
+    """
 
-    Luego, pregunta si el usuario necesita ayuda adicional.
+    """
 
     Los datos recolectados se delimitarán por comillas triples invertidas.
 
-    Mensaje del usuario: ```{message}```
     """
-    
-    yape = "https://innovacxion.page.link/mVFa"
-    link = "https://www.movistar.com.pe/atencion-al-cliente/lugares-y-medios-de-pago"
     return prompt
 
-def despedir_resumen(message):
+def despedir_resumen():
+    """
+    Despedirte y agradecer por ser parte de movistar.
+    
+    A continuación, regresa el siguiente mensaje que esta dentro de las comillas triples dobles:
+    
+    """
+    
     prompt = f"""
-    ¡Tienes una tarea! Despedirte y agradecer por ser parte de movistar.
-    
-    A continuación, regresa el siguiente mensaje que esta dentro de las comillas triples simples:
-    
-    '''
     Gracias por preferir Movistar, Esperemos que siga con nosotros, que tenga un buen resto del día.
-    '''
-    Luego, pregunta si el usuario necesita ayuda adicional.
+    """
+    
+    """
 
     Los datos recolectados se delimitarán por comillas triples invertidas.
 
-    Mensaje del usuario: ```{message}```
     """
     return prompt
 
@@ -103,18 +94,10 @@ def get_completion_from_messages(messages):
                         # Nombre de la funcion
                         "name": "detalle_deuda",
                         # Breve resumen de lo que hace la funcion
-                        "description": "Se obtiene detalles específicos de la deuda consultando la \
-                            base de datos a través de un mensaje proporcionado por el usuario. Requiere un mensaje \
-                            válido que indique la opción del servicio de detalle de la deuda.",
+                        "description": "Entregas los detalles de la deuda del usuario.",
                         "parameters": {
                             "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string",
-                                    "description": "Se recibe un rut y se verifica en la base de datos si esta registrado",
-                                },
-                            },
-                            "required": ["message"],
+                            "properties": {},
                         }
                     },      
         },
@@ -122,52 +105,32 @@ def get_completion_from_messages(messages):
             "type": "function",
                     "function": {
                         "name": "solicitar_recibo",
-                        "description": "Esta función devuelve una respuesta genérica que puede ser útil para solicitar \
-                        un recibo o comprobante. Se espera un mensaje válido para procesar la solicitud correctamente.",
+                        "description": "entrega un mensaje predeterminado indicando como solicitar el recibo.",
                         "parameters": {
                             "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string",
-                                    "description": "Se recibe un rut y se verifica en la base de datos si esta registrado",
-                                },
-                            },
-                            "required": ["message"],
+                            "properties": {},
                         }
                     },
         },
         {
             "type": "function",
                     "function": {
-                        "name": "formas_lugares_pago",
-                        "description": " Utiliza el mensaje proporcionado para ofrecer opciones relevantes de pago y ubicaciones. \
-                        Se requiere un mensaje válido para proporcionar la información adecuada.",
+                        "name": "formas_lugar_pago",
+                        "description": "entrega un mensaje predeterminado de las formas y lugares que puede pagar.",
                         "parameters": {
                             "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string",
-                                    "description": "Se recibe un rut y se verifica en la base de datos si esta registrado",
-                                },
-                            },
-                            "required": ["message"],
+                            "properties": {},
                         }
                     },
         },
         {
                     "type": "function",
                     "function": {
-                        "name": "despedida_resumen",
+                        "name": "despedir_resumen",
                         "description": "Genera una respuesta de despedida junto con un resumen de la conversación.",
                         "parameters": {
                             "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string",
-                                    "description": "se recibe un mensaje relacionado con despedida y se genera una respuesta acorde",
-                                },
-                            },
-                            "required": ["message"],
+                            "properties": {},
                         }
                     },
         }
@@ -180,83 +143,74 @@ def get_completion_from_messages(messages):
     tool_choice="auto",
     temperature=0,
     )
+    response_message = response.choices[0].message
+    tools_calls = response_message.tool_calls
     
+    if tools_calls:
+        ##### LAS FUNCIONES DISPONIBLES, SON LAS FUNCIONES A LLAMAR DENTRO DEL TOOLS
+        available_functions = {
+            "detalle_deuda": detalle_deuda,
+            "solicitar_recibo": solicitar_recibo,
+            "formas_lugar_pago": formas_lugar_pago,
+            "despedir_resumen": despedir_resumen
+        } 
+        messages.append(response_message)
+            # Itera de función en funcion hasta llegar a la que coincida con el input
+        for tool_call in tools_calls:  
+            function_name = tool_call.function.name
+            function_to_call = available_functions[function_name]
+            function_response = function_to_call()
+            messages.append(
+                {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": function_response,
+                }
+            )
+        return function_response
+    else:
+        return response_message.content
+
 # Contexto detallado para que el rol system no tenga alucinaciones
-messages = [
+context_sys = [
     {
         'role': 'system',
         'content': """
-        Eres el servicio de chat de Movistar, dedicado a proporcionar información detallada sobre la deuda del servicio telefónico de los usuarios. \
-        Tu función principal es ofrecer detalles de la deuda, información sobre formas y lugares de pago, así como la capacidad de solicitar un recibo. \
-        Esperas recibir la solicitud completa por parte del usuario antes de responder y verificas si hay una conclusión a la conversación. \
-        Otórgale tiempo al cliente para agregar más información si así lo desea. \
-        Tu estilo de respuesta debe ser amigable, conciso y altamente conversacional, utiliza emojis que tengan logica con el texto \
-        Recuerda indicarle al usuario que puede escribir la palabra "SALIR" en cualquier momento para finalizar la conversación.
-        """
+        Eres un asistente virtual de Movistar, y tu tarea principal es proporcionar información sobre el servicio telefónico. Tienes 3 opciones disponibles: detalle de la deuda, formas y lugares de pago, solicitar un recibo.
+        Si el usuario te dice que quiere algo relacionado con el tema de deuda vencida, debes enviar automaticamente el siguiente mensaje: "Necesito consultar algunos datos para continuar con tu consulta. Por favor, ingresa el número de documento de identidad (DNI) numérico del titular del servicio". El documento de identidad del titular debe ser el DNI en un formato numérico de entre 8 y 9 caracteres.
+        Si el usuario ingresa otro mensaje que no sea el DNI del titular, debes repetir la solicitud de ingreso del DNI.
+        Cada vez que el usuario elija una opción, verifica si ya proporcionó el DNI. Si es así, no vuelvas a solicitarlo.
+        Evita responder a preguntas que no estén relacionadas con el pago de cuentas y bríndale tiempo al usuario en caso de que desee realizar consultas sobre las otras opciones disponibles.
+        Tu estilo de respuesta debe ser amigable y conciso. 
+        Si el usuario te responde con un "salir", te despides usando la funcion correspondiente y cierra la aplicacion.
+
+        """   
     }
 ]
 
-# Mensaje de bienvenida al iniciar la app
 response = """
-¡Bienvenido al Chat de Movistar!  Estoy aquí para ayudarte. \n
-Puedes pedirme información sobre: \n
--Detalles de la deuda vencida  \n
--Solicitar un recibo  \n
--Conocer formas y lugares de pago  \n
--Finalizar la conversación  (Escribe "SALIR") \n
+¡Bienvenido al Chat de Movistar!  Estoy aquí para ayudarte. 
+Puedes pedirme información sobre: 
+-Detalles de la deuda vencida  
+-Solicitar un recibo  
+-formas y lugares de pago  
+-Salir \n
 """
 
 print(response)
 
-prompt_client = input("Cliente: ").lower()    
-
-if prompt_client == "exit":
-    exit()
-    
-if prompt_client:
-    print("Necesito que me facilites tu DNI para continuar con la verificación")
-    
-    # Aquí se extrae el primer mensaje de response_content
-    # Y se intenta obtener las tools calls    
-response_message = response.choices[0].message
-print(response_message)
-tools_calls = response_message.tool_calls
-    
-if tools_calls:
-        ##### LAS FUNCIONES DISPONIBLES, SON LAS FUNCIONES A LLAMAR DENTRO DEL TOOLS
-    available_functions = {
-        "detalle_deuda": detalle_deuda,
-        "solicitar_recibo": solicitar_recibo,
-        "formas_lugar_pago": formas_lugar_pago,
-        "despedir_resumen": despedir_resumen
-    } 
-    messages.append(response_message)
-        # Itera de función en funcion hasta llegar a la que coincida con el input
-    for tool_call in tools_calls:  
-        function_name = tool_call.function.name
-        function_to_call = available_functions[function_name]
-        function_args = json.loads(tool_call.function.arguments)
-        function_response = function_to_call(
-            message=function_args.get("message"),
-        )
-        #function_response = function_to_call()
-        messages.append(
-            {
-                "tool_call_id": tool_call.id,
-                "role": "tool",
-                "name": function_name,
-                "content": function_response,
-            }
-        )
-            
-    second_response = openai.chat.completions.create(
-        model="gpt-3.5-turbo-1106",
-        messages=messages,
-        temperature=0
-    )
-        
-    #return second_response.choices[0].message.content  # Return para el second_response 
-    #else:
-    #    return response_message.content # Return si no hay function calls
-
-
+while True:
+    input_user = input('User: ').lower()
+    print(' ')
+    if input_user.lower() == '':
+        print(response)
+    elif 'SALIR' not in input_user.lower():
+        context_sys.append({'role': 'user', 'content': input_user.lower()})
+        context_sys.append({'role': 'assistant', 'content': 'necesito consultar algunos datos para continuar con tu consulta. Por favor, ingresa el documento de identidad DNI numérico del titular del servicio'})
+        context_sys.append({'role': 'user', 'content': input_user.lower()})
+        response = get_completion_from_messages(context_sys)
+        context_sys.append({'role': 'assistant', 'content': response})
+        print(f'chatBot Movistar: {response}\n')
+    else: 
+        break
