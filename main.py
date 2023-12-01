@@ -1,8 +1,6 @@
 import openai
 import json
 import os
-from pydantic import BaseModel
-from typing import Optional
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,15 +13,15 @@ def detalle_deuda(message):
     prompt = f"""
     ¡Tienes una tarea! Proporcionar detalles sobre la deuda de un usuario.
 
-    Comienza pidiendo al usuario un dato vital para reconocer al cliente: el documento de identidad del titular. Solicita el RUT numérico del titular, \
-    con un formato de entre 9 y 10 caracteres, que el guión del RUT sea obligatorio.
+    Comienza pidiendo al cliente que ingrese el DNI \
+    con un formato de entre 9 y 10 caracteres, que el guión del DNI sea obligatorio.
 
-    si la persona ingresa un mensaje diferente, vuelve a pedir el RUT de manera amable.
+    si la persona ingresa un mensaje diferente, vuelve a pedir el DNI de manera amable.
 
     A continuación, regresa la siguiente información entre comillas triples simples:
 
     '''DETALLE DE LA DEUDA VENCIDA
-    Querido/a cliente/a con el siguiente <RUT>
+    Querido/a cliente/a con el siguiente <DNI>
     Tiene una deuda por pagar del siguiente monto $10.000. \
     Vencida el 30/11
     Servicio contratado en AV. Huerfanos 1111. \
@@ -38,13 +36,64 @@ def detalle_deuda(message):
     return prompt
 
 def solicitar_recibo(message):
-    return
+    prompt = f"""
+    ¡Tienes una tarea! Obtener recibo.
+
+    A continuación, regresa la siguiente información entre comillas triples simples:
+
+    '''SOLICITAR RECIBO
+    {B2C} \
+     \
+    '''
+    Luego, pregunta si el usuario necesita ayuda adicional.
+
+    Los datos recolectados se delimitarán por comillas triples invertidas.
+
+    Mensaje del usuario: ```{message}```
+    """
+    
+    B2C = "Obten tu recibo con solo unos clics https://mirecibo.mosvistar.com.pe/"
+    return prompt
 
 def formas_lugar_pago(message):
-    return
+    prompt = f"""
+    ¡Tienes una tarea! Proporcionar formas y lugares de pago de un usuario.
+
+    A continuación, regresa la siguiente información entre comillas triples simples:
+
+    '''FORMAS Y LUGARES DE PAGO \
+    En Movistar te brindamos diversas formas de pago SIN COMISION. Puedes pagar por yape: {yape}  \ 
+    Desde la web o app de tu banco. \
+    Conoce todos los canales de pago en el siguiente link {link} \
+    '''
+
+    Luego, pregunta si el usuario necesita ayuda adicional.
+
+    Los datos recolectados se delimitarán por comillas triples invertidas.
+
+    Mensaje del usuario: ```{message}```
+    """
+    
+    yape = "https://innovacxion.page.link/mVFa"
+    link = "https://www.movistar.com.pe/atencion-al-cliente/lugares-y-medios-de-pago"
+    return prompt
 
 def despedir_resumen(message):
-    return
+    prompt = f"""
+    ¡Tienes una tarea! Despedirte y agradecer por ser parte de movistar.
+    
+    A continuación, regresa el siguiente mensaje que esta dentro de las comillas triples simples:
+    
+    '''
+    Gracias por preferir Movistar, Esperemos que siga con nosotros, que tenga un buen resto del día.
+    '''
+    Luego, pregunta si el usuario necesita ayuda adicional.
+
+    Los datos recolectados se delimitarán por comillas triples invertidas.
+
+    Mensaje del usuario: ```{message}```
+    """
+    return prompt
 
 def get_completion_from_messages(messages):
     tools = [
@@ -125,58 +174,15 @@ def get_completion_from_messages(messages):
     ]
     
     response = openai.chat.completions.create(
-        model='gpt-3.5-turbo-1106',
-        messages=messages,
-        tools=tools,
-        tool_choice="auto",
-        temperature=0,
+    model='gpt-3.5-turbo-1106',
+    messages=messages,
+    tools=tools,
+    tool_choice="auto",
+    temperature=0,
     )
     
-    # Aquí se extrae el primer mensaje de response_content
-    # Y se intenta obtener las tools calls    
-    response_message = response.choices[0].message
-    print(response_message)
-    tools_calls = response_message.tool_calls
-    
-    if tools_calls:
-        ##### LAS FUNCIONES DISPONIBLES, SON LAS FUNCIONES A LLAMAR DENTRO DEL TOOLS
-        available_functions = {
-            "detalle_deuda": detalle_deuda,
-            "solicitar_recibo": solicitar_recibo,
-            "formas_lugar_pago": formas_lugar_pago,
-            "despedir_resumen": despedir_resumen
-        } 
-        messages.append(response_message)
-        # Itera de función en funcion hasta llegar a la que coincida con el input
-        for tool_call in tools_calls:  
-            function_name = tool_call.function.name
-            function_to_call = available_functions[function_name]
-            function_args = json.loads(tool_call.function.arguments)
-            function_response = function_to_call(
-                message=function_args.get("message"),
-            )
-            #function_response = function_to_call()
-            messages.append(
-                {
-                    "tool_call_id": tool_call.id,
-                    "role": "tool",
-                    "name": function_name,
-                    "content": function_response,
-                }
-            )
-            
-        second_response = openai.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
-            messages=messages,
-            temperature=0
-        )
-        
-        return second_response.choices[0].message.content  # Return para el second_response 
-    else:
-        return response_message.content # Return si no hay function calls
-
 # Contexto detallado para que el rol system no tenga alucinaciones
-context_sys = [
+messages = [
     {
         'role': 'system',
         'content': """
@@ -202,14 +208,55 @@ Puedes pedirme información sobre: \n
 
 print(response)
 
-while True:
-    prompt_client = input('Cliente: ').lower()
-    if prompt_client == '' or 'hola' in prompt_client:
-        print(response)
-    elif 'salir' not in prompt_client:
-        context_sys.append({'role': 'user', 'content': prompt_client})
-        response = get_completion_from_messages(context_sys)
-        context_sys.append({'role': 'assistant', 'content': response})
-        print(f'Assistant: {response}\n')
-    else:
-        break
+prompt_client = input("Cliente: ").lower()    
+
+if prompt_client == "exit":
+    exit()
+    
+if prompt_client:
+    print("Necesito que me facilites tu DNI para continuar con la verificación")
+    
+    # Aquí se extrae el primer mensaje de response_content
+    # Y se intenta obtener las tools calls    
+response_message = response.choices[0].message
+print(response_message)
+tools_calls = response_message.tool_calls
+    
+if tools_calls:
+        ##### LAS FUNCIONES DISPONIBLES, SON LAS FUNCIONES A LLAMAR DENTRO DEL TOOLS
+    available_functions = {
+        "detalle_deuda": detalle_deuda,
+        "solicitar_recibo": solicitar_recibo,
+        "formas_lugar_pago": formas_lugar_pago,
+        "despedir_resumen": despedir_resumen
+    } 
+    messages.append(response_message)
+        # Itera de función en funcion hasta llegar a la que coincida con el input
+    for tool_call in tools_calls:  
+        function_name = tool_call.function.name
+        function_to_call = available_functions[function_name]
+        function_args = json.loads(tool_call.function.arguments)
+        function_response = function_to_call(
+            message=function_args.get("message"),
+        )
+        #function_response = function_to_call()
+        messages.append(
+            {
+                "tool_call_id": tool_call.id,
+                "role": "tool",
+                "name": function_name,
+                "content": function_response,
+            }
+        )
+            
+    second_response = openai.chat.completions.create(
+        model="gpt-3.5-turbo-1106",
+        messages=messages,
+        temperature=0
+    )
+        
+    #return second_response.choices[0].message.content  # Return para el second_response 
+    #else:
+    #    return response_message.content # Return si no hay function calls
+
+
