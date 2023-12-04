@@ -8,6 +8,8 @@ load_dotenv()
 # Se carga la variable dentro del .env que contiene el token
 openai.api_key=os.getenv('API_KEY')
 
+chat_log = []
+
 # Funcion a ejecutar si el input esta relacionado a detalles de la deuda
 def detalle_deuda():
     """
@@ -87,9 +89,11 @@ def despedir_resumen():
     return prompt
 
 
+
 # Una funcion que contiene las herramientas que se utilizaran.
 def get_completion_from_messages(messages):
-    tools = [
+    global chat_log
+    tools  = [
         {
             "type": "function",
                     "function": {
@@ -140,7 +144,7 @@ def get_completion_from_messages(messages):
     
     response = openai.chat.completions.create(
     model='gpt-3.5-turbo-1106',
-    messages=messages,
+    messages=chat_log+context_sys,
     tools=tools,
     tool_choice="auto",
     temperature=0,
@@ -156,13 +160,13 @@ def get_completion_from_messages(messages):
             "formas_lugar_pago": formas_lugar_pago,
             "despedir_resumen": despedir_resumen
         } 
-        messages.append(response_message)
+        chat_log.append(response_message)
             # Itera de función en funcion hasta llegar a la que coincida con el input
         for tool_call in tools_calls:  
             function_name = tool_call.function.name
             function_to_call = available_functions[function_name]
             function_response = function_to_call()
-            messages.append(
+            chat_log.append(
                 {
                     "tool_call_id": tool_call.id,
                     "role": "tool",
@@ -180,13 +184,23 @@ context_sys = [
         'role': 'system',
         'content': """
         Eres un asistente virtual de Movistar, y tu tarea principal es proporcionar información sobre el servicio telefónico. Tienes 3 opciones disponibles: detalle de la deuda, formas y lugares de pago, solicitar un recibo.
-        Si el usuario te dice que quiere algo relacionado con el tema de deuda vencida, debes enviar automaticamente el siguiente mensaje: "Necesito consultar algunos datos para continuar con tu consulta. Por favor, ingresa el número de documento de identidad (DNI) numérico del titular del servicio". El documento de identidad del titular debe ser el DNI en un formato numérico de entre 8 y 9 caracteres.
+        Si el usuario pregunta cosas que no estan relacionada con las 3 opciones, A continuación, regresa la siguiente información entre comillas triples dobles:
+        """
+        """
+        Lo siento, no me está permitido responder a preguntas fuera del contexto de la compañia Movistar.
+        Si no tiene dudas sobre las 3 opciones presentadas, escribar "salir". 
+        """
+        """
+        Si el usuario sigue preguntando cosas que no estan relacionadas con las 3 opciones, A continuación, regresa lo que sea necesario la anterior información entre comillas triples dobles.
+        Si el usuario pregunta por detalles de la deuda vencida, debes enviar automaticamente el siguiente mensaje entre comillas triples dobles.
+        """
+        """
+        Necesito consultar algunos datos para continuar con tu consulta. Por favor, ingresa el número de documento de identidad (DNI) numérico del titular del servicio". El documento de identidad del titular debe ser el DNI en un formato numérico de entre 8 y 9 caracteres.
+        """
+        """
         Si el usuario ingresa otro mensaje que no sea el DNI del titular, debes repetir la solicitud de ingreso del DNI.
-        Cada vez que el usuario elija una opción, verifica si ya proporcionó el DNI. Si es así, no vuelvas a solicitarlo.
-        Evita responder a preguntas que no estén relacionadas con el pago de cuentas y bríndale tiempo al usuario en caso de que desee realizar consultas sobre las otras opciones disponibles.
         Tu estilo de respuesta debe ser amigable y conciso. 
         Si el usuario te responde con un "salir", te despides usando la funcion correspondiente y cierra la aplicacion.
-
         """   
     }
 ]
@@ -211,10 +225,10 @@ while True:
         print(response)
     elif 'SALIR' not in input_user.lower():
         context_sys.append({'role': 'user', 'content': input_user.lower()})
-        context_sys.append({'role': 'assistant', 'content': 'necesito consultar algunos datos para continuar con tu consulta. Por favor, ingresa el documento de identidad DNI numérico del titular del servicio'})
+        # context_sys.append({'role': 'assistant', 'content': 'necesito consultar algunos datos para continuar con tu consulta. Por favor, ingresa el documento de identidad DNI numérico del titular del servicio'})
         context_sys.append({'role': 'user', 'content': input_user.lower()})
         response = get_completion_from_messages(context_sys)
-        context_sys.append({'role': 'assistant', 'content': response})
+        chat_log.append({'role': 'assistant', 'content': response})
         print(f'chatBot Movistar: {response}\n')
     else: 
         break
