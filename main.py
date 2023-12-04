@@ -150,39 +150,71 @@ def get_completion_from_messages(messages):
     
     if tools_calls:
         ##### LAS FUNCIONES DISPONIBLES, SON LAS FUNCIONES A LLAMAR DENTRO DEL TOOLS
-    available_functions = {
-        "detalle_deuda": detalle_deuda,
-        "solicitar_recibo": solicitar_recibo,
-        "formas_lugar_pago": formas_lugar_pago,
-        "despedir_resumen": despedir_resumen
-    } 
-    messages.append(response_message)
-        # Itera de función en funcion hasta llegar a la que coincida con el input
-    for tool_call in tools_calls:  
-        function_name = tool_call.function.name
-        function_to_call = available_functions[function_name]
-        function_args = json.loads(tool_call.function.arguments)
-        function_response = function_to_call(
-            message=function_args.get("message"),
-        )
-        #function_response = function_to_call()
-        messages.append(
-            {
-                "tool_call_id": tool_call.id,
-                "role": "tool",
-                "name": function_name,
-                "content": function_response,
-            }
-        )
-            
-    second_response = openai.chat.completions.create(
-        model="gpt-3.5-turbo-1106",
-        messages=messages,
-        temperature=0
-    )
-        
-    #return second_response.choices[0].message.content  # Return para el second_response 
-    #else:
-    #    return response_message.content # Return si no hay function calls
+        available_functions = {
+            "detalle_deuda": detalle_deuda,
+            "solicitar_recibo": solicitar_recibo,
+            "formas_lugar_pago": formas_lugar_pago,
+            "despedir_resumen": despedir_resumen
+        } 
+        messages.append(response_message)
+            # Itera de función en funcion hasta llegar a la que coincida con el input
+        for tool_call in tools_calls:  
+            function_name = tool_call.function.name
+            function_to_call = available_functions[function_name]
+            function_response = function_to_call()
+            messages.append(
+                {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": function_response,
+                }
+            )
+        return function_response
+    else:
+        return response_message.content
 
+# Contexto detallado para que el rol system no tenga alucinaciones
+context_sys = [
+    {
+        'role': 'system',
+        'content': """
+        Eres un asistente virtual de Movistar, y tu tarea principal es proporcionar información sobre el servicio telefónico. Tienes 3 opciones disponibles: detalle de la deuda, formas y lugares de pago, solicitar un recibo.
+        Si el usuario te dice que quiere algo relacionado con el tema de deuda vencida, debes enviar automaticamente el siguiente mensaje: "Necesito consultar algunos datos para continuar con tu consulta. Por favor, ingresa el número de documento de identidad (DNI) numérico del titular del servicio". El documento de identidad del titular debe ser el DNI en un formato numérico de entre 8 y 9 caracteres.
+        Si el usuario ingresa otro mensaje que no sea el DNI del titular, debes repetir la solicitud de ingreso del DNI.
+        Cada vez que el usuario elija una opción, verifica si ya proporcionó el DNI. Si es así, no vuelvas a solicitarlo.
+        Evita responder a preguntas que no estén relacionadas con el pago de cuentas y bríndale tiempo al usuario en caso de que desee realizar consultas sobre las otras opciones disponibles.
+        Tu estilo de respuesta debe ser amigable y conciso. 
+        Si el usuario te responde con un "salir", te despides usando la funcion correspondiente y cierra la aplicacion.
 
+        """   
+    }
+]
+
+# Mensaje de bienvenida
+response = """
+¡Bienvenido al Chat de Movistar!  Estoy aquí para ayudarte. 
+Puedes pedirme información sobre: 
+-Detalles de la deuda vencida  
+-Solicitar un recibo  
+-formas y lugares de pago  
+-Salir \n
+"""
+
+# Se imprime el mensaje inicial
+print(response)
+
+while True:
+    input_user = input('User: ').lower()
+    print(' ')
+    if input_user.lower() == '':
+        print(response)
+    elif 'SALIR' not in input_user.lower():
+        context_sys.append({'role': 'user', 'content': input_user.lower()})
+        context_sys.append({'role': 'assistant', 'content': 'necesito consultar algunos datos para continuar con tu consulta. Por favor, ingresa el documento de identidad DNI numérico del titular del servicio'})
+        context_sys.append({'role': 'user', 'content': input_user.lower()})
+        response = get_completion_from_messages(context_sys)
+        context_sys.append({'role': 'assistant', 'content': response})
+        print(f'chatBot Movistar: {response}\n')
+    else: 
+        break
